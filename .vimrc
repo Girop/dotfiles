@@ -1,13 +1,19 @@
 call plug#begin()
-	Plug 'fcpg/vim-fahrenheit'
+	Plug 'morhetz/gruvbox'
+    Plug 'tpope/vim-fugitive'
 call plug#end()
 
 nnoremap <space> <nop>
 let mapleader = " "
 
+"Color section
 syntax on
-colorscheme fahrenheit
-highlight visual cterm=reverse
+set termguicolors
+colorscheme gruvbox
+set background=dark
+let g:gruvbox_contrast_dark = "medium"
+let g:gruvbox_italic = 0
+let g:gruvbox_bold = 0
 
 "different cursor style for insert and normal modes - warning: may not work properly on some term-emulators
 let &t_SI = "\<esc>[6 q"
@@ -31,9 +37,8 @@ set scrolloff=5 sidescroll=1 sidescrolloff=8 display+=lastline "more lines visib
 set nobackup nowritebackup "there are supposedly some problems with those
 set autoread 
 set path+=** wildmenu "find files recursively
-set hidden "stupid confirmation popup is gone
+set hidden "stupid confirmation pop-up is gone
 set cursorline
-set splitbelow splitright "sane rules for splitting
 setlocal spell spelllang=en_us
 
 "vimrc itself related
@@ -48,6 +53,9 @@ nnoremap <c-l> <c-w>l
 nnoremap sv <c-w>v
 nnoremap ss <c-w>s
 nnoremap sq :wq!<cr>
+
+" Fast escape from insert mode
+inoremap jk <esc> 
 
 "swap current and previous buffer
 nnoremap <leader><leader> <c-^> 
@@ -71,6 +79,21 @@ let g:netrw_banner = 0
 let g:netrw_browse_split = 4
 let g:netrw_altv = 1
 let g:netrw_liststyle=3
+
+"Center view when jumping up/down
+nnoremap <C-d> <C-d>zz
+nnoremap <C-u> <C-u>zz
+
+"Moving sections when in V mode
+vnoremap J :m'>+1<CR>gv=gv
+vnoremap K :m'<-2<CR>gv=gv
+
+"Stay on current position when collapsing lines
+nnoremap J mzJ`z
+
+"Centering of stuff
+nnoremap n nzzzv
+nnoremap N Nzzzv
 
 "--- status bar --- recreated thanks to some reddit user
 set laststatus=2 "set the status bar (2 means always)
@@ -242,5 +265,4 @@ augroup GetGitBranch
   autocmd!
   autocmd VimEnter,WinEnter,BufEnter * call StatuslineGitBranch()
 augroup END
-
 "--- end status bar ---

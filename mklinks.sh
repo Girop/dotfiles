@@ -1,3 +1,6 @@
 #!/bin/sh
+dotfiles=".vimrc .bashrc .tmux.conf"
 
-echo "hello there"
+for file in $dotfiles; do
+    cp "$file" "$HOME/"
+done
