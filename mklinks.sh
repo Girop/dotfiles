@@ -2,5 +2,5 @@
 dotfiles=".vimrc .bashrc .tmux.conf"
 
 for file in $dotfiles; do
-    cp "$file" "$HOME/"
+    ln -sf "$HOME/dotfiles/$file" "$HOME/$file"
 done

@@ -1,19 +1,19 @@
 call plug#begin()
 	Plug 'morhetz/gruvbox'
-    Plug 'tpope/vim-fugitive'
+	Plug 'tpope/vim-fugitive'
 call plug#end()
 
 nnoremap <space> <nop>
 let mapleader = " "
 
 "Color section
-syntax on
 set termguicolors
 colorscheme gruvbox
 set background=dark
 let g:gruvbox_contrast_dark = "medium"
 let g:gruvbox_italic = 0
 let g:gruvbox_bold = 0
+filetype plugin indent on
 
 "different cursor style for insert and normal modes - warning: may not work properly on some term-emulators
 let &t_SI = "\<esc>[6 q"
@@ -34,7 +34,7 @@ set showmode showmatch
 set history=1000
 set backspace=indent,eol,start " backspace through anything
 set scrolloff=5 sidescroll=1 sidescrolloff=8 display+=lastline "more lines visible when scrolling
-set nobackup nowritebackup "there are supposedly some problems with those
+set nobackup nowritebackup noswapfile "there are supposedly some problems with those
 set autoread 
 set path+=** wildmenu "find files recursively
 set hidden "stupid confirmation pop-up is gone
@@ -94,6 +94,8 @@ nnoremap J mzJ`z
 "Centering of stuff
 nnoremap n nzzzv
 nnoremap N Nzzzv
+
+
 
 "--- status bar --- recreated thanks to some reddit user
 set laststatus=2 "set the status bar (2 means always)
@@ -158,14 +160,10 @@ highlight StatusFilePath      ctermbg=236 ctermfg=167 guibg=#2D2D2D guifg=#E06C7
 highlight StatusGitColour     ctermbg=28 ctermfg=0 guibg=#2BBB4F guifg=#080808
 highlight StatusTabs      ctermbg=236 ctermfg=150 guibg=#282C34 guifg=#98C379
 
-" Colours for tab bar
 highlight TabLineFill     ctermbg=236   ctermfg=167  guibg=#000000 guifg=#ffffff
 highlight TabLine         ctermbg=236   ctermfg=8   guibg=#000000 guifg=#808080
 highlight TabLineSel      ctermbg=236   ctermfg=167  guibg=#000000 guifg=#ffffff
 highlight TabLineModified ctermbg=236   ctermfg=1   guibg=#000000 guifg=#ff0000
-" ctermbg - cterm displays only on terminal
-" ctermfg - foreground colors 
-" cterm=bold gives you bold letters 
 
 " define the function to update the statusline
 function! UpdateStatusLine()
@@ -174,60 +172,29 @@ function! UpdateStatusLine()
   let l:mode_text = get(g:currentmode, l:mode, 'normal')
   
   if l:mode ==# 'i'
-    let l:color = 'stslineinsertcolor'
+    let l:color = 'StslineInsertColor'
   elseif l:mode ==# 'r' || l:mode ==# 'r' || l:mode ==# "\<c-v>"
-    let l:color = 'stslinereplacecolor'
+    let l:color = 'StslineReplaceColor'
   elseif l:mode ==# 'v' || l:mode ==# 'v'
-    let l:color = 'stslinevisualcolor'
+    let l:color = 'StslineVisualColor'
   elseif l:mode ==# 't'
-    let l:color = 'stslinecommandcolor'
+    let l:color = 'StslineCommandColor'
   elseif l:mode ==# 'c' || l:mode ==# '!'
-    let l:color = 'stslinecommandcolor'
+    let l:color = 'StslineCommandColor'
   elseif l:mode ==# 's'
-    let l:color = 'stslineterminalcolor'
+    let l:color = 'StslineCommandColor'
   elseif l:mode ==# 't'
-    let l:color = 'stslinecommandcolor'
+    let l:color = 'StslineNormalColor'
   else
-    let l:color = 'stslinenormalcolor'
+    let l:color = 'StslineNormalColor'
   endif
-
-" ----------------------------------------------------------------------------------------------------
-
-" function to display the names of the open buffers
-  let l:buffer_list = getbufinfo({'bufloaded': 1})
-  let l:buffer_names = []
-  for l:buf in l:buffer_list
-    let l:buffer_name = buf.name != '' ? fnamemodify(buf.name, ':t') : '[no name]'
-    call add(l:buffer_names, l:buf.bufnr . ':' . l:buffer_name)
-  endfor
-
-" function to get the tab information
-function! GetTabsInfo()
-  let l:tabs = ''
-  for i in range(1, tabpagenr('$'))
-    let l:tabnr = i
-    let l:tabname = fnamemodify(bufname(tabpagebuflist(i)[tabpagewinnr(i) - 1]), ':t')
-    let l:modified = getbufvar(tabpagebuflist(i)[tabpagewinnr(i) - 1], '&modified')
-    let l:tabstatus = l:modified ? '%#tablinemodified#*' : '%#tabline#'
-    if i == tabpagenr()
-      let l:tabstatus = '%#tablinesel#'
-    endif
-    let l:tabs .= l:tabstatus . '  ' . l:tabnr . ':' . l:tabname . ' '
-  endfor
-  return l:tabs
-endfunction
-
-set tabline=%!GetTabsInfo()
-let l:tab_count = tabpagenr('$')
 
 " Construct the status line
   let &statusline = '%#' . l:color . '#'" Apply box colour
   let &statusline .= ' ' . l:mode_symbol . ' '          " Mode symbol
   let &statusline .= ' ' . l:mode_text . ''" Mode text with space before and after
-  let &statusline .= '%#StatusBuffer# Buffers: ' . join(l:buffer_names, ', ') " Displays the number of buffers open in vim
-  let &statusline .= '%#StatusTabs# Tabs 󰝜 : ' . l:tab_count . ' '
   let &statusline .= '%{&readonly ? "ReadOnly " : ""}'        " Add readonly indicator 
-  let &statusline .= '%#StatusGitColour# %{b:gitbranch}'" My zsh displays the git status, uncomment if you want.
+  let &statusline .= '%#StatusGitColour# %{b:gitbranch}'
   let &statusline .= '%#StatusFilePath#  %F %m %{&modified ? " " : ""}'
   let &statusline .= '%='
   let &statusline .= '%#OrangeFileIcon#  %{GetFileTypeIcon()} '
@@ -247,18 +214,17 @@ call UpdateStatusLine()
 " ----------------------------------------------------------------------------------------------------
 
 function! StatuslineGitBranch()
-    let b:gitbranch=""
-    if &modifiable
-        try
-            let l:dir=expand('%:p:h')
-            let l:gitrevparse = system("git -c ".l:dir." rev-parse --abbrev-ref head")
-            if !v:shell_error
-                let b:gitbranch="( ".substitute(l:gitrevparse, '\n', '', 'g').") "
-            endif
-        catch
-        endtry
-    
+    let b:gitbranch= ""
+    if !&modifiable
+        return
     endif
+    try
+        let l:gitrevparse = system("git branch --show-current")
+        if !v:shell_error
+            let b:gitbranch="( ".substitute(l:gitrevparse, '\n', '', 'g').") "
+        endif
+    catch
+    endtry
 endfunction
 
 augroup GetGitBranch
