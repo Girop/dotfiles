@@ -1,6 +1,9 @@
 call plug#begin()
 	Plug 'morhetz/gruvbox'
 	Plug 'tpope/vim-fugitive'
+    Plug 'sheerun/vim-polyglot'
+    Plug 'natebosch/vim-lsc'
+    Plug 'Yggdroot/LeaderF', { 'do': ':LeaderfInstallCExtension' }
 call plug#end()
 
 nnoremap <space> <nop>
@@ -10,7 +13,7 @@ let mapleader = " "
 set termguicolors
 colorscheme gruvbox
 set background=dark
-let g:gruvbox_contrast_dark = "medium"
+let g:gruvbox_contrast_dark = "hard"
 let g:gruvbox_italic = 0
 let g:gruvbox_bold = 0
 filetype plugin indent on
@@ -39,7 +42,7 @@ set autoread
 set path+=** wildmenu "find files recursively
 set hidden "stupid confirmation pop-up is gone
 set cursorline
-setlocal spell spelllang=en_us
+syntax on
 
 "vimrc itself related
 nnoremap <leader>ev :vsplit $MYVIMRC<cr>
@@ -73,12 +76,6 @@ augroup GeneralGroup
     autocmd bufnewfile * silent write
 	autocmd textchanged,textchangedi <buffer> silent write
 augroup END
-
-"improved netrw
-let g:netrw_banner = 0
-let g:netrw_browse_split = 4
-let g:netrw_altv = 1
-let g:netrw_liststyle=3
 
 "Center view when jumping up/down
 nnoremap <C-d> <C-d>zz
@@ -232,3 +229,33 @@ augroup GetGitBranch
   autocmd VimEnter,WinEnter,BufEnter * call StatuslineGitBranch()
 augroup END
 "--- end status bar ---
+
+"improved netrw
+let g:netrw_liststyle=3
+let g:netrw_banner = 0
+let g:netrw_browse_split = 3
+let g:netrw_altv = 1
+let g:netrw_winsize = 15
+nnoremap <leader>pb :Lexplore<CR>
+"--- End netrw ---
+
+let g:lsc_server_commands = {'cpp': 'clangd', 'c': 'clangd'}
+let g:lsc_auto_map = v:true
+
+"let g:lsc_auto_map = {
+"    \ 'GoToDefinition': '<C-]>',
+"    \ 'GoToDefinitionSplit': ['<C-W>]', '<C-W><C-]>'],
+"    \ 'FindReferences': 'gr',
+"    \ 'NextReference': '<C-n>',
+"    \ 'PreviousReference': '<C-p>',
+"    \ 'FindImplementations': 'gI',
+"    \ 'FindCodeActions': 'ga',
+"    \ 'Rename': 'gR',
+"    \ 'ShowHover': v:true,
+"    \ 'DocumentSymbol': 'go',
+"    \ 'WorkspaceSymbol': 'gS',
+"    \ 'SignatureHelp': 'gm',
+"    \ 'Completion': 'completefunc',
+"    \}
+
+
