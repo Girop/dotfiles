@@ -1,9 +1,9 @@
 call plug#begin()
-	Plug 'morhetz/gruvbox'
-	Plug 'tpope/vim-fugitive'
-    Plug 'sheerun/vim-polyglot'
-    Plug 'natebosch/vim-lsc'
-    Plug 'Yggdroot/LeaderF', { 'do': ':LeaderfInstallCExtension' }
+    Plug 'morhetz/gruvbox'
+    Plug 'tpope/vim-fugitive'
+    "Plug 'sheerun/vim-polyglot'
+    Plug 'prabirshrestha/vim-lsp'
+    Plug 'mattn/vim-lsp-settings'
 call plug#end()
 
 nnoremap <space> <nop>
@@ -28,6 +28,7 @@ set belloff=all "disable bell on invalid movement
 set encoding=utf-8
 set number relativenumber "line numbering
 set nowrap 
+set shortmess-=S "Show number of found matches
 set timeoutlen=1000 ttimeoutlen=0 "tmux compatibility
 set updatetime=200 "gotta go fast
 set tabstop=4 softtabstop=4 shiftwidth=4 expandtab smartindent autoindent "tabs are *very* smart now, emit spaces
@@ -39,36 +40,10 @@ set backspace=indent,eol,start " backspace through anything
 set scrolloff=5 sidescroll=1 sidescrolloff=8 display+=lastline "more lines visible when scrolling
 set nobackup nowritebackup noswapfile "there are supposedly some problems with those
 set autoread 
-set path+=** wildmenu "find files recursively
+"set path+=** wildmenu "find files recursively
 set hidden "stupid confirmation pop-up is gone
 set cursorline
 syntax on
-
-"vimrc itself related
-nnoremap <leader>ev :vsplit $MYVIMRC<cr>
-nnoremap <leader>es :so $MYVIMRC<cr>
-
-"pane movement
-nnoremap <c-h> <c-w>h
-nnoremap <c-j> <c-w>j
-nnoremap <c-k> <c-w>k
-nnoremap <c-l> <c-w>l
-nnoremap sv <c-w>v
-nnoremap ss <c-w>s
-nnoremap sq :wq!<cr>
-
-" Fast escape from insert mode
-inoremap jk <esc> 
-
-"swap current and previous buffer
-nnoremap <leader><leader> <c-^> 
-
-"reset highlight
-nnoremap <leader>h <cmd>nohlsearch<cr>
-
-"put word in " and ' respectively
-nnoremap <leader>" viw<esc>a"<esc>bi"<esc>lel
-nnoremap <leader>' viw<esc>a'<esc>bi'<esc>lel
 
 "general atocmds
 augroup GeneralGroup
@@ -76,23 +51,6 @@ augroup GeneralGroup
     autocmd bufnewfile * silent write
 	autocmd textchanged,textchangedi <buffer> silent write
 augroup END
-
-"Center view when jumping up/down
-nnoremap <C-d> <C-d>zz
-nnoremap <C-u> <C-u>zz
-
-"Moving sections when in V mode
-vnoremap J :m'>+1<CR>gv=gv
-vnoremap K :m'<-2<CR>gv=gv
-
-"Stay on current position when collapsing lines
-nnoremap J mzJ`z
-
-"Centering of stuff
-nnoremap n nzzzv
-nnoremap N Nzzzv
-
-
 
 "--- status bar --- recreated thanks to some reddit user
 set laststatus=2 "set the status bar (2 means always)
@@ -163,7 +121,27 @@ highlight TabLineSel      ctermbg=236   ctermfg=167  guibg=#000000 guifg=#ffffff
 highlight TabLineModified ctermbg=236   ctermfg=1   guibg=#000000 guifg=#ff0000
 
 " define the function to update the statusline
+function! StatuslineGitBranch()
+    let b:gitbranch= ""
+    if !&modifiable
+        return
+    endif
+    try
+        let l:gitrevparse = system("git branch --show-current")
+        if !v:shell_error
+            let b:gitbranch="( ".substitute(l:gitrevparse, '\n', '', 'g').") "
+        endif
+    catch
+    endtry
+endfunction
+
+augroup GetGitBranch
+  autocmd!
+  autocmd VimEnter,WinEnter,BufEnter * call StatuslineGitBranch()
+augroup END
+
 function! UpdateStatusLine()
+  call StatuslineGitBranch()
   let l:mode = mode()
   let l:mode_symbol = ''  " displays symbol for all modes
   let l:mode_text = get(g:currentmode, l:mode, 'normal')
@@ -208,54 +186,93 @@ augroup END
 
 " initial status line update
 call UpdateStatusLine()
-" ----------------------------------------------------------------------------------------------------
-
-function! StatuslineGitBranch()
-    let b:gitbranch= ""
-    if !&modifiable
-        return
-    endif
-    try
-        let l:gitrevparse = system("git branch --show-current")
-        if !v:shell_error
-            let b:gitbranch="( ".substitute(l:gitrevparse, '\n', '', 'g').") "
-        endif
-    catch
-    endtry
-endfunction
-
-augroup GetGitBranch
-  autocmd!
-  autocmd VimEnter,WinEnter,BufEnter * call StatuslineGitBranch()
-augroup END
 "--- end status bar ---
 
 "improved netrw
-let g:netrw_liststyle=3
 let g:netrw_banner = 0
-let g:netrw_browse_split = 3
+let g:netrw_liststyle = 3
+let g:netrw_browse_split = 4
 let g:netrw_altv = 1
-let g:netrw_winsize = 15
-nnoremap <leader>pb :Lexplore<CR>
+let g:netrw_winsize = 25
+nnoremap <leader>pb :Lex<CR>
+
+"Delete previous Netrw buffer
+augroup AutoDeleteNetrwHiddenBuffers
+    au!
+    au FileType netrw setlocal bufhidden=wipe
+augroup end
 "--- End netrw ---
 
-let g:lsc_server_commands = {'cpp': 'clangd', 'c': 'clangd'}
-let g:lsc_auto_map = v:true
+augroup lsp_install
+    au!
+    " call s:on_lsp_buffer_enabled only for languages that has the server registered.
+    au User lsp_buffer_enabled call s:on_lsp_buffer_enabled()
+augroup END
 
-"let g:lsc_auto_map = {
-"    \ 'GoToDefinition': '<C-]>',
-"    \ 'GoToDefinitionSplit': ['<C-W>]', '<C-W><C-]>'],
-"    \ 'FindReferences': 'gr',
-"    \ 'NextReference': '<C-n>',
-"    \ 'PreviousReference': '<C-p>',
-"    \ 'FindImplementations': 'gI',
-"    \ 'FindCodeActions': 'ga',
-"    \ 'Rename': 'gR',
-"    \ 'ShowHover': v:true,
-"    \ 'DocumentSymbol': 'go',
-"    \ 'WorkspaceSymbol': 'gS',
-"    \ 'SignatureHelp': 'gm',
-"    \ 'Completion': 'completefunc',
-"    \}
+function! s:on_lsp_buffer_enabled() abort
+   setlocal omnifunc=lsp#complete
+
+    if exists('+tagfunc') | setlocal tagfunc=lsp#tagfunc | endif
+    nnoremap <buffer> gd <plug>(lsp-definition)
+    nnoremap <buffer> gs <plug>(lsp-document-symbol-search)
+    nnoremap <buffer> gS <plug>(lsp-workspace-symbol-search)
+    nnoremap <buffer> gr <plug>(lsp-references)
+    nnoremap <buffer> gi <plug>(lsp-implementation)
+    nnoremap <buffer> gt <plug>(lsp-type-definition)
+    nnoremap <buffer> <leader>rn <plug>(lsp-rename)
+    nnoremap <buffer> [g <plug>(lsp-previous-diagnostic)
+    nnoremap <buffer> ]g <plug>(lsp-next-diagnostic)
+    nnoremap <buffer> K <plug>(lsp-hover)
+    nnoremap <buffer> <expr><c-f> lsp#scroll(+4)
+    nnoremap <buffer> <expr><c-d> lsp#scroll(-4)
+
+    let g:lsp_format_sync_timeout = 1000
+endfunction
+
+"vimrc itself related
+nnoremap <leader>ev :vsplit $MYVIMRC<cr>
+nnoremap <leader>es :so $MYVIMRC<cr>
+
+" TODO Not working as intended
+vnoremap <leader>p P
+nnoremap <leader>p P
+
+"pane movement
+nnoremap <c-h> <c-w>h
+nnoremap <c-j> <c-w>j
+nnoremap <c-k> <c-w>k
+nnoremap <c-l> <c-w>l
+nnoremap sv <c-w>v
+nnoremap ss <c-w>s
+
+" Fast escape from insert mode
+inoremap jk <esc> 
+
+"swap current and previous buffer
+nnoremap <leader><leader> <c-^> 
+
+"reset highlight
+nnoremap <leader>h <cmd>nohlsearch<cr>
+
+"put word in " and ' respectively
+nnoremap <leader>" viw<esc>a"<esc>bi"<esc>lel
+nnoremap <leader>' viw<esc>a'<esc>bi'<esc>lel
 
 
+"Moving sections when in V mode
+vnoremap J :m'>+1<CR>gv=gv
+vnoremap K :m'<-2<CR>gv=gv
+
+"Stay on current position when collapsing lines
+nnoremap J mzJ`z
+
+"Centering of stuff
+nnoremap n nzzzv
+nnoremap N Nzzzv
+
+"Center view when jumping up/down, resolving lsp clash on shortcuts TOOD still
+"doesnt work
+nnoremap <C-d> <C-d>zz
+nnoremap <C-u> <C-u>zz
+nmap <expr><buffer> <c-d> popup_list()->empty() ? '<c-d>' : lsp#scroll(+4)
+nmap <expr><buffer> <c-u> popup_list()->empty() ? '<c-u>' : lsp#scroll(-4)
