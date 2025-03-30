@@ -4,8 +4,8 @@ case $- in
       *) return;;
 esac
 
-# don't put duplicate lines or lines starting with space in the history.
 # See bash(1) for more options
+# don't put duplicate lines or lines starting with space in the history.
 HISTCONTROL=ignoreboth
 
 # append to the history file, don't overwrite it
@@ -109,3 +109,5 @@ if ! shopt -oq posix; then
 fi
 
 alias cls="clear"
+export PATH="$PATH:/opt/nvim-linux-x86_64/bin"
+
